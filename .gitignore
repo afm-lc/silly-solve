@@ -14,3 +14,4 @@
 .hgignore
 .hg/
 .cache
+cljs-test-runner-out/
