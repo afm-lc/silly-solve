@@ -3,6 +3,14 @@
   {:doc "Run tests"
    :task (clojure "-X:test:runner")}
 
+  test-cljs
+  {:doc "Run ClojureScript tests under Node"
+   :task (clojure "-M:cljs-test")}
+
+  test-all
+  {:doc "Run both Clojure and ClojureScript tests"
+   :depends [test test-cljs]}
+
   lint
   {:doc "Run clj-kondo linter"
    :task (shell "clj-kondo --lint src test")}

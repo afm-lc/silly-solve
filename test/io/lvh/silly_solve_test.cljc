@@ -1,84 +1,89 @@
 (ns io.lvh.silly-solve-test
   (:require
-   [clojure.test :as t]
+   #?(:clj [clojure.test :as t]
+      :cljs [cljs.test :as t])
    [io.lvh.silly-solve :as ss]
    [meander.strategy.epsilon :as r]))
 
-(t/deftest invert-tests
-  (t/is (= '(+ 1 (- 2) (- 3) (- 4) (- 5))
-           (#'ss/invert '- [1 2 3 4 5])))
-  (t/is (= '(* 1 (/ 2) (/ 3) (/ 4) (/ 5))
-           (#'ss/invert '/ [1 2 3 4 5]))))
+;; Private var tests - only run in Clojure (CLJS doesn't support #' syntax)
+#?(:clj
+   (t/deftest invert-tests
+     (t/is (= '(+ 1 (- 2) (- 3) (- 4) (- 5))
+              (#'ss/invert '- [1 2 3 4 5])))
+     (t/is (= '(* 1 (/ 2) (/ 3) (/ 4) (/ 5))
+              (#'ss/invert '/ [1 2 3 4 5])))))
 
-(t/deftest find-consts-tests
-  ;; Note: all the tests assume the const comes first in the equation, because
-  ;; it's not find-consts' job to simplify.
-  (t/are [eqns res] (= res (#'ss/find-consts eqns))
-    []
-    {}
+#?(:clj
+   (t/deftest find-consts-tests
+     ;; Note: all the tests assume the const comes first in the equation, because
+     ;; it's not find-consts' job to simplify.
+     (t/are [eqns res] (= res (#'ss/find-consts eqns))
+       []
+       {}
 
-    '[(= x (/ y 2))]
-    {}
+       '[(= x (/ y 2))]
+       {}
 
-    '[(= 1 x)]
-    '{x 1}
+       '[(= 1 x)]
+       '{x 1}
 
-    '[(= 1 x) (= 2 y)]
-    '{x 1 y 2}
+       '[(= 1 x) (= 2 y)]
+       '{x 1 y 2}
 
-    '[(= 1 x)
-      (= x (/ y 2))]
-    '{x 1}
+       '[(= 1 x)
+         (= x (/ y 2))]
+       '{x 1}
 
-    '[(= 1 :x)]
-    '{:x 1}
+       '[(= 1 :x)]
+       '{:x 1}
 
-    '[(= 1 :x)]
-    '{:x 1}
+       '[(= 1 :x)]
+       '{:x 1}
 
-    '[(= 1 :x :y)]
-    '{:x 1 :y 1}
+       '[(= 1 :x :y)]
+       '{:x 1 :y 1}
 
-    '[(= 1 :x :y (+ :some :complex :equation))]
-    '{:x 1 :y 1}))
+       '[(= 1 :x :y (+ :some :complex :equation))]
+       '{:x 1 :y 1})))
 
-(t/deftest propagate-consts-tests
-  (t/are [eqns consts res] (= res (#'ss/propagate-consts eqns consts))
-    '[]
-    '{}
-    '[]
+#?(:clj
+   (t/deftest propagate-consts-tests
+     (t/are [eqns consts res] (= res (#'ss/propagate-consts eqns consts))
+       '[]
+       '{}
+       '[]
 
-    '[(= 1 x) (= y 2)]
-    '{}
-    '[(= 1 x) (= y 2)]
+       '[(= 1 x) (= y 2)]
+       '{}
+       '[(= 1 x) (= y 2)]
 
-    ;; Note: we expect consts to appear in the front but that's not
-    ;; propagate-consts' job
-    '[(= x y)]
-    '{y 1}
-    '[(= x 1)]
+       ;; Note: we expect consts to appear in the front but that's not
+       ;; propagate-consts' job
+       '[(= x y)]
+       '{y 1}
+       '[(= x 1)]
 
-    ;; Constants get resolved even in deeply nested contexts
-    '[(= p (+ x y))
-      (= q (+ x z))]
-    '{x 1 y 2 z 3}
-    '[(= p (+ 1 2))
-      (= q (+ 1 3))]
+       ;; Constants get resolved even in deeply nested contexts
+       '[(= p (+ x y))
+         (= q (+ x z))]
+       '{x 1 y 2 z 3}
+       '[(= p (+ 1 2))
+         (= q (+ 1 3))]
 
-    ;; Expressions that _don't_ look like (= ?sym ?expr) are untouched, so that
-    ;; other, smarter solvers might be able to make progress instead.
-    '[(= (+ p q) (r s))
-      (= x y)]
-    '{y 1}
-    '[(= (+ p q) (r s))
-      (= x 1)]
+       ;; Expressions that _don't_ look like (= ?sym ?expr) are untouched, so that
+       ;; other, smarter solvers might be able to make progress instead.
+       '[(= (+ p q) (r s))
+         (= x y)]
+       '{y 1}
+       '[(= (+ p q) (r s))
+         (= x 1)]
 
-    ;; However, we can find constants inside such more complex expressions
-    '[(= (+ x z) (+ x y))
-      (= q (+ x z))]
-    '{z 1}
-    '[(= (+ x 1) (+ x y))
-      (= q (+ x 1))]))
+       ;; However, we can find constants inside such more complex expressions
+       '[(= (+ x z) (+ x y))
+         (= q (+ x z))]
+       '{z 1}
+       '[(= (+ x 1) (+ x y))
+         (= q (+ x 1))])))
 
 (def traced-simplify (r/trace ss/simplify))
 
@@ -175,28 +180,29 @@
         '(= p (max x y 1 2 3))
         '(= q (min x y 4 5 6))]))))
 
-(t/deftest equality-const-to-front
-  (t/are [in out] (= out (#'ss/equality-const-to-front in))
-    [10 :a]
-    '(= 10 :a)
+#?(:clj
+   (t/deftest equality-const-to-front
+     (t/are [in out] (= out (#'ss/equality-const-to-front in))
+       [10 :a]
+       '(= 10 :a)
 
-    [:a 10]
-    '(= 10 :a)
+       [:a 10]
+       '(= 10 :a)
 
-    [10 :a 10 :b]
-    '(= 10 :a :b)
+       [10 :a 10 :b]
+       '(= 10 :a :b)
 
-    [:a 10 :b 10 :c]
-    '(= 10 :a :b :c)
+       [:a 10 :b 10 :c]
+       '(= 10 :a :b :c)
 
-    [:a :b 10 10 :c]
-    '(= 10 :a :b :c))
+       [:a :b 10 10 :c]
+       '(= 10 :a :b :c))
 
-  (t/is
-   (=
-    (ss/solve-for-consts '[(= :b 10)])
-    (ss/solve-for-consts '[(= 10 :b)])
-    [[] {:b 10}])))
+     (t/is
+      (=
+       (ss/solve-for-consts '[(= :b 10)])
+       (ss/solve-for-consts '[(= 10 :b)])
+       [[] {:b 10}]))))
 
 (t/deftest deal-with-multi-valued-equality-tests
   (t/are [in-exprs] (= [[] {:a 10 :b 10 :c 10}] (ss/solve-for-consts in-exprs))
