@@ -264,3 +264,54 @@
               :result7 7}
              vs)
           "alt operator should allow for finding non-zero values and ordered choice among options")))
+
+(t/deftest division-tests
+  (t/testing "division with constants"
+    (t/are [eqn res] (= res (ss/simplify eqn))
+      '(/ 10 2) 5
+      '(/ 100 2 5) 10
+      '(/ 24 2 3 4) 1))
+
+  (t/testing "division in solve"
+    (t/is (= [[] {:a 10 :b 2 :c 5}]
+             (ss/solve-for-consts
+              '[(= :a 10)
+                (= :b 2)
+                (= :c (/ :a :b))])))))
+
+(t/deftest exponentiation-tests
+  (t/testing "exponentiation with constants"
+    (t/are [eqn res] (= res (ss/simplify eqn))
+      '(** 2 3) 8
+      '(** 3 2) 9
+      '(** 10 0) 1
+      '(** 5 1) 5))
+
+  (t/testing "exponentiation in solve"
+    (t/is (= [[] {:base 2 :exp 3 :result 8}]
+             (ss/solve-for-consts
+              '[(= :base 2)
+                (= :exp 3)
+                (= :result (** :base :exp))])))))
+
+(t/deftest floor-ceil-tests
+  (t/testing "floor with constants"
+    (t/are [eqn res] (= res (ss/simplify eqn))
+      '(floor 3) 3.0
+      '(floor 3.7) 3.0
+      '(floor 3.2) 3.0
+      '(floor -2.3) -3.0))
+
+  (t/testing "ceil with constants"
+    (t/are [eqn res] (= res (ss/simplify eqn))
+      '(ceil 3) 3.0
+      '(ceil 3.7) 4.0
+      '(ceil 3.2) 4.0
+      '(ceil -2.3) -2.0))
+
+  (t/testing "floor and ceil in solve"
+    (t/is (= [[] {:x 3.5 :floored 3.0 :ceiled 4.0}]
+             (ss/solve-for-consts
+              '[(= :x 3.5)
+                (= :floored (floor :x))
+                (= :ceiled (ceil :x))])))))
